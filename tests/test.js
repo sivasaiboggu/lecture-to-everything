@@ -130,7 +130,7 @@ check("layoutMap places every node inside the SVG bounds with no overlaps on a r
     assert.ok(!seenXY.has(key), `two nodes share position ${key}`);
     seenXY.set(key, p.node.label);
   });
-  const root = positions.get(SAMPLE.mindmap.id);
+  const root = positions.get(SAMPLE.mindmap);
   assert.strictEqual(root.x, 0);
 });
 
@@ -167,4 +167,24 @@ check("normaliseArtefacts clamps out-of-range timestamps and caps artefact count
   }), []);
 });
 
+
+/* layoutMap: duplicate labels must not overwrite each other */
+check("layoutMap keeps two nodes with the same label at different positions", () => {
+  const root = { id: "r", label: "Topic", startSec: 0, children: [
+    { id: "a", label: "Same", startSec: 10, children: [] },
+    { id: "b", label: "Same", startSec: 20, children: [] }
+  ]};
+  const { positions } = layoutMap(root);
+  assert.strictEqual(positions.size, 3);
+  assert.notStrictEqual(positions.get(root.children[0]).y, positions.get(root.children[1]).y);
+});
+
+/* exportNotesMarkdown: a section with no endSec ends where it starts */
+check("exportNotesMarkdown never prints 00:00 for a missing endSec", () => {
+  const md = exportNotesMarkdown({
+    title: "T", notes: { summary: "", sections: [{ heading: "H", startSec: 65, points: ["p"] }] }
+  });
+  assert.ok(md.includes("[01:05\u201301:05]"), md);
+  assert.ok(!md.includes("00:00"), md);
+});
 console.log(`\n${passed} tests passed, 0 failed.`);

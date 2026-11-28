@@ -37,8 +37,7 @@ function validateLecture(lec) {
   (lec.notes?.sections || []).forEach((s, i) => {
     if (s.startSec < 0 || s.startSec > dur) errors.push(`notes section ${s.id || i} startSec is outside the lecture`);
     if (!Array.isArray(s.points) || s.points.length === 0) errors.push(`notes section ${s.id || i} has no points`);
-  });
-  if (!Array.isArray(lec.flashcards) || lec.flashcards.length !== 20) errors.push(`flashcards: expected 20, got ${(lec.flashcards || []).length}`);
+  });  if (!Array.isArray(lec.flashcards) || lec.flashcards.length !== 20) errors.push(`flashcards: expected 20, got ${(lec.flashcards || []).length}`);
   (lec.flashcards || []).forEach((c, i) => {
     if (!c.front || !c.back) errors.push(`flashcard ${i + 1} is missing a front or back`);
   });
@@ -95,7 +94,8 @@ function exportNotesMarkdown(lec) {
   lines.push("_Generated from the lecture — check against the transcript before you trust it._", "");
   if (lec.notes?.summary) { lines.push(lec.notes.summary, ""); }
   (lec.notes?.sections || []).forEach(s => {
-    lines.push(`## ${s.heading}  [${fmtTime(s.startSec)}–${fmtTime(s.endSec)}]`, "");
+    // A section with no endSec ends where it starts; never print 00:00 for it.
+    lines.push(`## ${s.heading}  [${fmtTime(s.startSec)}–${fmtTime(s.endSec ?? s.startSec)}]`, "");
     (s.points || []).forEach(p => lines.push("- " + p));
     if (s.definitions && s.definitions.length) {
       lines.push("", "| Term | Meaning |", "| --- | --- |");
@@ -140,10 +140,12 @@ function layoutMap(root) {
   const positions = new Map();
   function walk(node, depth) {
     const kids = node.children || [];
-    if (kids.length === 0) { positions.set(node.id || node.label, { x: depth * (NODE_W + X_GAP), y: leafY * (NODE_H + Y_GAP), node }); leafY++; return leafY - 1; }
+    // Key by the node object itself: two nodes may share a label (or lack an
+    // id), and keying by label used to make one overwrite the other.
+    if (kids.length === 0) { positions.set(node, { x: depth * (NODE_W + X_GAP), y: leafY * (NODE_H + Y_GAP), node }); leafY++; return leafY - 1; }
     const childRows = kids.map(k => walk(k, depth + 1));
     const mid = (childRows[0] + childRows[childRows.length - 1]) / 2;
-    positions.set(node.id || node.label, { x: depth * (NODE_W + X_GAP), y: mid * (NODE_H + Y_GAP), node });
+    positions.set(node, { x: depth * (NODE_W + X_GAP), y: mid * (NODE_H + Y_GAP), node });
     return mid;
   }
   walk(root, 0);

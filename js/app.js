@@ -235,9 +235,9 @@
     const { positions, width, height, NODE_W, NODE_H } = layoutMap(lec.mindmap);
     let edges = "", nodes = "";
     const walk = node => {
-      const p = positions.get(node.id || node.label);
+      const p = positions.get(node);
       (node.children || []).forEach(k => {
-        const c = positions.get(k.id || k.label);
+        const c = positions.get(k);
         const x1 = p.x + NODE_W, y1 = p.y + NODE_H / 2, x2 = c.x, y2 = c.y + NODE_H / 2, mx = (x1 + x2) / 2;
         edges += `<path class="map-edge" d="M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}"/>`;
         walk(k);
